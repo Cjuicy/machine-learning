@@ -157,10 +157,12 @@ KNN算法是一种有监督学习，是机器学习中一个经典的算法，�
 
 **缺点：**
 
-1. Hard-margin SVM是线性分类器，不能处理不同类别相互交融的情况（加入容错率缓解—>Soft-margin SVM）
+1. Hard-margin SVM是线性分类器，不能处理不同类别相互交融的情况（加入容错率缓解—>Soft-margin SVM（软间隔SVM））
 2. 线性分类器，不可用于求解线性完全不可分的情况（引入Kernel—>Kernel SVM求解线性不可分）
 
 
+
+## Hard-margin SVM
 
 **Support Vector Machines**
 
@@ -238,7 +240,9 @@ $$
 \\min \qquad \frac{w^Tw}{2} \qquad w\in \mathbb{R}^b
 \\s.t. \qquad y_i(w^Tx_i+b)\geqslant1 \qquad \forall i \in\{1,...,n\}
 $$
-观察这个约束条件，我们可以发现，所有的样本都被要求分类正确，但这可能是不行的，假设有一个数据集要么因为收集数据时产生的噪声，要么应为我们的度量方式丢失了一些能够有助于将样本互相区分开的特征。或者其他原因，产生一些我们人眼可见处于错误位置的点。 如下图：
+## Soft-margin SVM
+
+观察上面约束条件，我们可以发现，所有的样本都被要求分类正确，但这可能是不行的，假设有一个数据集要么因为收集数据时产生的噪声，要么应为我们的度量方式丢失了一些能够有助于将样本互相区分开的特征。或者其他原因，产生一些我们人眼可见处于错误位置的点。 如下图：
 
 <img src="AI算法笔记.assets/image-20220423144552682.png" alt="image-20220423144552682" style="zoom:33%;" />
 
@@ -287,4 +291,61 @@ $$
 **Dual SVM and Kernels**
 
 从对偶问题和技巧的角度来看待SVM
+
+**Duality**
+
+对偶性在优化里面指的是大多数优化问题都可以从两个角度来看，一个是原问题（primal problem），一个是对偶问题。一个原问题可能有很多种对偶问题，这里只考虑一种类型的对偶关系。只要解出了对偶问题，就得到了原问题的解。这种情况下就叫强对偶。原问题的解等价于对偶问题的解。
+
+**Lagrangian(KKT)Dual for SVM**
+
+为SVM推导拉格朗日或叫KKT对偶
+
+先附上公式
+$$
+Primal \quad SVM
+\\min \qquad \frac{w^Tw}{2}+C\sum^n_{i=0}\xi_i \qquad w\in \mathbb{R}^b \qquad \xi \in[0,\infty]^n
+\\s.t. \qquad y_i(w^Tx_i+b) -1+\xi_i \geqslant 0 \qquad \forall i \in\{1,...,n\}
+$$
+
+$$
+Dual \quad SVM
+\\ min \quad\quad \frac{1}{2}\sum_i\sum_j \alpha_i \alpha_j y_iy_jx_i^Tx_j- \sum_i\alpha_i
+\\s.t.\sum_i \alpha_iy_i=0,\qquad \alpha_i \in [0,C]
+\\w = \sum_i \alpha_iy_jx_i \qquad b=y_i-\sum_j \alpha_jy_jx_j^Tx_i
+\\0<\alpha_i<C
+$$
+
+对偶问题的优化变量变成了一个新的变量$\alpha$，由于这里的$\alpha$是用来施加不等式约束的，严格来说它不是拉格朗日乘子，它是KKT乘子。只是细节上略有不同。大家仍把它叫做拉格朗日乘子，我在此也这么叫。
+
+ 从原问题到对偶问题的第一步，先来看看原问题的约束，我们要做的是试着去移除这个约束，我们将用对抗的思想来取代这个约束，即在一个最小化函数内部进行最大化。它看起来如下式所示：
+$$
+\\min \qquad \frac{w^Tw}{2}+C\sum^n_{i=0}\xi_i
+\qquad \textcolor{red}{s.t. \quad y_i(w^Tx_i+b) -1+\xi_i \geqslant 0} \qquad \forall i \in\{1,...,n\}\quad w\in \mathbb{R}^b
+\quad \textcolor{green}{\xi \in[0,\infty]^n}
+\\
+上面是老式子，下面是新式子
+\\
+\\min \qquad \qquad max \qquad L(w,b,\xi,\alpha,\beta)
+\\\textcolor{purple}{w\in\mathbb{R}^d} \qquad\quad \alpha\in[0,\infty]^n\qquad\qquad
+\\\textcolor{purple}{xi\in\mathbb{R}^n}\qquad\quad \beta\in[0,\infty]^n\qquad\qquad
+\\L(w,b,\xi,\alpha,\beta)=\frac{w^Tw}{2}+C\sum^n_{i}\xi_i
+\\-\sum_i\textcolor{red}{\alpha_i(y_i(w^Tx_i+b)-1+\xi_i)}-\sum\textcolor{green}{\beta_i\xi_i}
+$$
+建立一个新方程，不仅包含W,b,$\xi$，还包含$\alpha,\beta$，$\alpha,\beta$是用来控制两个约束的，第一个约束可以看做是这个优化问题里的主要约束，它用来约束算法正确分类的（第一行标红）。它意味着数据以一定间隔被分类，并且被加以一定的松弛。我们通过把这项约束添加到低下的这个拉格朗日函数里（最后一行标红） 。
+
+关于这一项的对抗思想就体现在，如果破坏了这项约束，$\alpha$可以设为使得内部最大函数无限大的一个值,但却给最小化函数带来了代价。（两个式子相互制约）
+
+另一项约束为绿色标出来的，它要求$\xi$是大于等于0的非负数。
+
+一旦我们建立了这个包含惩罚项的拉格朗日函数，它包含了KKT乘子，也叫拉格朗日乘子，就可以移除原函数中W和$\xi$的约束，在新函数里，w,$\xi$是完全没有约束的（紫色高亮）。只有内部最大化max函数需要满足约束。如果对抗过程中发现括号里的约束被破坏了（最后一行红色标注），通过改变$\alpha$乘子的值，函数值会变得非常大，使得最小化过程失败。
+
+**我们来假设一下**
+
+如果约束被破坏，也就是$y_i(w^Tx_i+b)-1+\xi_i$的值是负的，也就是在约束松弛的范围内，没能将数据正确分类，为了简便，假设它等于-1，所以这一项就相当于$-\alpha*(-1)$。$\alpha$在原问题里是个非负数，所以对抗过程中会使得$\alpha$变成一个非常大的值，从而目标函数变得非常大，所以在最小化博弈中就失败了。
+
+反过来，如果将数据正确分类了，那么上述项就是一个正值，无论对抗过程中$\alpha$被优化成什么值，除非$\alpha$能取小于0的值（实际上只能取非负值），否则都无法比令$\alpha=0$时的函数值更大。$\beta$这个拉格朗日乘子也可以用同样的过程来解释，$\beta$是用来施加$\xi\geqslant 0$这个约束的，如果$\xi$小于0，就会使得最小化失败。
+
+**概括一下：**我们目前所做的，就是把带约束的目标函数冲写成一个min-max问题，其中建立了一个对抗过程，如果约束被破坏，就会产生惩罚。这仍属于原问题范畴。
+
+为了把原问题转化为对偶问题，需要进行一些简单地变换，就是把min-max问题转化成max-min问题
 
